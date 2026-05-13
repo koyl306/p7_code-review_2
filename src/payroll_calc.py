@@ -5,6 +5,25 @@ from enum import Enum
 
 
 # ======================================================
+# CONSTANTS
+# ======================================================
+
+OVERTIME_MULTIPLIER = Decimal("1.5")
+WEEKEND_MULTIPLIER = Decimal("2")
+
+US_LOW_TAX = Decimal("0.22")
+US_HIGH_TAX = Decimal("0.30")
+EU_TAX = Decimal("0.25")
+UA_TAX = Decimal("0.195")
+DEFAULT_TAX = Decimal("0.20")
+
+US_HIGH_TAX_THRESHOLD = Decimal("5000")
+
+SALARY_QUARTERLY_BONUS = Decimal("500")
+HOURLY_YEARLY_BONUS = Decimal("200")
+
+
+# ======================================================
 # ENUMS
 # ======================================================
 
@@ -83,13 +102,13 @@ class HourlyStrategy(PayrollStrategy):
         overtime_pay = (
             employee.hourly_rate
             * employee.overtime_hours
-            * Decimal("1.5")
+            * OVERTIME_MULTIPLIER
         )
 
         weekend_pay = (
             employee.hourly_rate
             * employee.weekend_hours
-            * Decimal("2")
+            * WEEKEND_MULTIPLIER
         )
 
         total = base_pay + overtime_pay + weekend_pay
@@ -134,15 +153,19 @@ class TaxCalculator:
     ) -> Decimal:
 
         if region == Region.US:
-            return Decimal("0.30") if income > Decimal("5000") else Decimal("0.22")
+            return (
+                US_HIGH_TAX
+                if income > US_HIGH_TAX_THRESHOLD
+                else US_LOW_TAX
+            )
 
         if region == Region.EU:
-            return Decimal("0.25")
+            return EU_TAX
 
         if region == Region.UA:
-            return Decimal("0.195")
+            return UA_TAX
 
-        return Decimal("0.20")
+        return DEFAULT_TAX
 
 
 # ======================================================
@@ -165,13 +188,13 @@ class BonusCalculator:
 
     def _quarterly_bonus(self, employee: Employee) -> Decimal:
         if employee.employee_type == EmployeeType.SALARY:
-            return Decimal("500")
+            return SALARY_QUARTERLY_BONUS
 
         return Decimal("0")
 
     def _yearly_bonus(self, employee: Employee) -> Decimal:
         if employee.employee_type == EmployeeType.HOURLY:
-            return Decimal("200")
+            return HOURLY_YEARLY_BONUS
 
         return Decimal("0")
 
